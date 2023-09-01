@@ -30,12 +30,32 @@ class NodeType(enum.IntEnum):
     SIZE = 5
 
 
-def too_close(x1: float, y1: float, z1: float, r1: float, x2: float, y2: float, z2: float, r2: float, margin: float) -> bool:
+def too_close(
+        x1: float,
+        y1: float,
+        z1: float,
+        r1: float,
+        x2: float,
+        y2: float,
+        z2: float,
+        r2: float,
+        margin: float
+) -> bool:
+    """Check if two circles are too close to each other."""
     if (np.linalg.norm(np.array([x2-x1, y2-y1, z2-z1])) < r1+r2+margin):
         return True
     return False
 
-def too_close_list(x:float, y: float, z: float, r: float, c: List[List[float]], R: List[float], margin: float) -> bool:
+def too_close_list(
+        x:float,
+        y: float,
+        z: float,
+        r: float,
+        c: List[List[float]],
+        R: List[float],
+        margin: float
+) -> bool:
+    """Check if a circle is too close to any other circle in a list."""
     for i in range(len(R)):
         if too_close(x, y, z, r, c[i][0], c[i][1], c[i][2], R[i], margin):
             return True
@@ -51,7 +71,8 @@ def outside(
         L: float,
         H: float,
         margin: float
-    ) -> bool:
+) -> bool:
+    """Check if a circle is outside the domain."""
     if (x-r-margin < x_start):
         return True
     elif (y-r-margin < y_start-H):
@@ -74,7 +95,8 @@ def create_circles(
         r_end: float,
         margin: float,
         index: int
-    ) -> Tuple[List[List[float]], List[float]]:
+) -> Tuple[List[List[float]], List[float]]:
+    """Create a list of circles with random positions and radius."""
     c = []
     R = []
     for i in range(n):
@@ -115,20 +137,24 @@ def write_geo(
         plane_surface: PlaneSurface,
         physical_curves: List
 ) -> None:
+    """Write the geometry to a .geo file."""
     os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
     with open(osp.join(dir, 'geo', 'cad_{:03d}.geo'.format(index)), 'w') as geo:
         points_id = []
         geo.write(f'//+\nSetFactory("OpenCASCADE");\n')
 
+        # Write points
         for point in points:
             geo.write('//+\nPoint({:d}) = {{{:f}, {:f}, {:f}, {:f}}};\n'.format(point._id, point.x[0], point.x[1], point.x[2], point.mesh_size))
             points_id.append(point._id)
 
+        # Write lines
         for line in lines:
             geo.write('//+\nLine({:d}) = {{{:d}, {:d}}};\n'.format(line._id, line.points[0]._id, line.points[1]._id))
 
         geo.write('//+\nCurve Loop({:d}) = {{{:d}, {:d}, {:d}, {:d}}};\n'.format(curve._id, curve.curves[0]._id, curve.curves[1]._id, curve.curves[2]._id, curve.curves[3]._id))
 
+        # Write circles points
         for circle in circles:
             for arc_circle in circle.curve_loop.curves:
                 for point in arc_circle.points:
@@ -136,31 +162,37 @@ def write_geo(
                         geo.write('//+\nPoint({:d}) = {{{:f}, {:f}, {:f}, {:f}}};\n'.format(point._id, point.x[0], point.x[1], point.x[2], point.mesh_size))
                         points_id.append(point._id)
 
+        # Write circles ellipses
         for circle in circles:
             for arc_circle in circle.curve_loop.curves:
                 geo.write('//+\nEllipse({:d}) = {{{:d}, {:d}, {:d}, {:d}}};\n'.format(arc_circle._id, arc_circle.points[0]._id, arc_circle.points[1]._id, arc_circle.points[2]._id, arc_circle.points[2]._id))
             geo.write('//+\nCurve Loop({:d}) = {{{:d}, {:d}, {:d}}};\n'.format(circle.curve_loop._id, circle.curve_loop.curves[0]._id, circle.curve_loop.curves[1]._id, circle.curve_loop.curves[2]._id))
 
+        # Write plane surface
         geo.write('//+\nPlane Surface({:d}) = '.format(plane_surface._id))
         geo.write('{')
+        # Write control surface and first hole
         geo.write('{:d}, {:d}'.format(plane_surface.curve_loop._id, plane_surface.holes[0]._id))
+        # Write the rest of the holes
         for hole in plane_surface.holes[1:]:
             geo.write(', {:d}'.format(hole._id))
         geo.write('};\n')
 
+        # Write physical entities
         id = 100
         for physical_curve in physical_curves:
             curve = physical_curve[0]
             label = physical_curve[1]
             geo.write('//+\nPhysical Curve("{:s}", {:d}) = '.format(label, id))
             geo.write('{')
+            # Write first curve
             geo.write('{:d}'.format(curve[0]._id))
+            # Write the rest of the curves
             for c in curve[1:]:
                 geo.write(', {:d}'.format(c._id))
             geo.write('};\n')
             id+=1
             
-
 def create_mesh(
         dir: str,
         x_start: float,
@@ -173,6 +205,8 @@ def create_mesh(
         mesh_circle_size: float,
         index: int
 ) -> None:
+    """Create a mesh using GMSH."""
+
     # Initialize empty geometry using the build in kernel in GMSH
     geometry = pygmsh.geo.Geometry()
     # Fetch model we would like to add data to
@@ -240,10 +274,15 @@ if __name__ == '__main__':
     with alive_bar(total=m*n) as bar:
         for i in range(m):
             for j in range(n):
+                # Randomly generate the position of the channel
                 x_start = random.random()
                 y_start = random.random()
                 L = L_ref*(0.25*random.random()+0.75)
                 H = H_ref*(0.25*random.random()+0.75)
+
+                # Randomly generate the position of the circles
                 c, R = create_circles(wdir, (i+1), x_start, y_start, L, H, r_start, r_end, margin, i*n+j)
+
+                # Create the mesh
                 create_mesh(dir, x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, i*n+j)
                 bar()
