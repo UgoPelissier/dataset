@@ -1,24 +1,26 @@
 load "iovtk"
 load "msh3"
 
+// 2D Stokes problem with circle(s) in the middle of the domain (2D)
+
+// Parameters
 real nu = 1.0/400.0;
 
-real L = 40;
-real H = 5;
-
+// Mesh size
 real meshLineSize = 1;
 real meshCircleSize = 0.1;
 
+// Iteration
 int mmax = 2;
 int m = 0;
 
 int lmax = 250;
 int l = 0;
 
-real error = 0.1;
-real criterion = 0.01;
-
 func string typoTitleCircle(int count){
+    /*
+    Return the title of the file containing the circle's parameters
+    */
     string title;
     if (count<10){
             title = "../circles/circle_00" + count + ".txt";
@@ -33,6 +35,9 @@ func string typoTitleCircle(int count){
 }
 
 func string typoTitleMesh(int count){
+    /*
+    Return the title of the file containing the mesh
+    */
     string title;
     if (count<10){
             title = "mesh/cad_00" + count + ".msh";
@@ -47,6 +52,9 @@ func string typoTitleMesh(int count){
 }
 
 func string typoTitleVtu(int count){
+    /*
+    Return the title of the file containing the solution
+    */
     string title;
     if (count<10){
             title = "vtu/cad_00" + count + ".vtu";
@@ -60,6 +68,7 @@ func string typoTitleVtu(int count){
     return title;
 }
 
+// Iteration
 while (m<mmax){
     while (l<lmax){
         cout << "Iter: " << m*lmax+l+1 << "/" << mmax*lmax << endl;
@@ -68,25 +77,28 @@ while (m<mmax){
         real L;
         real H;
 
+        // Read domain parameters
         ifstream file(typoTitleCircle(m*lmax+l));
         file >> xstart;
         file >> ystart;
         file >> L;
         file >> H;
 
-        //inflow
+        // Inflow
         border ba(t=0,1.0){x=xstart;y=(1-t)*(ystart+H)+t*(ystart-H);label=1;};
-        // outflow
+        // Outflow
         border bb(t=0,1.0){x=L;y=t*(ystart+H)+(1-t)*(ystart-H);label=2;};
-        // wall
+        // Walls
         border bc(t=0,1.0){x=(1-t)*xstart+t*L;y=ystart-H;label=3;};
         border bd(t=0,1.0){x=t*xstart+(1-t)*L;y=ystart+H;label=3;};
 
+        // 1 circle
         if (m==0){
             real xc;
             real yc;
             real r0;
 
+            // Read circle parameters
             file >> xc;
             file >> yc;
             file >> r0;
@@ -98,6 +110,7 @@ while (m<mmax){
                 label = 4;
             };
 
+            // Number of elements in each part of the domain
             int nFlow = 2*H/meshLineSize;
             int nWall = L/meshLineSize;
             int nCircle = 2*pi*r0/meshCircleSize;
@@ -127,6 +140,7 @@ while (m<mmax){
             savevtk(typoTitleVtu(m*lmax+l), Th, u1, u2, p, dataname="u v p", bin=false);
         }
 
+        // 2 circles
         else if (m==1){
             real xc1;
             real yc1;
