@@ -13,6 +13,7 @@ printf "\rProgress : [${_fill// /#}${_empty// /-}] ${_progress}%% (${i}/${Nfiles
 
 }
 
+# Read Nfiles from command line
 for arg in "$@"
 do
    key=$(echo $arg | cut -f1 -d=)
@@ -23,8 +24,10 @@ do
    export "$key"="$value"
 done
 
+# gmsh path
 gmsh="/mnt/host/c/Users/ugo.pelissier/gmsh/gmsh.exe"
 
+# Read and process .geo files
 for i in $(seq $Nfiles);
 do
     j=$(($i-1))
@@ -42,4 +45,5 @@ do
     fi
 done
 
+# Move .msh files to mesh folder
 mv geo/cad_*.msh mesh/
