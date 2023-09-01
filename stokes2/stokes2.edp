@@ -1,0 +1,194 @@
+load "iovtk"
+load "msh3"
+
+real nu = 1.0/400.0;
+
+real L = 40;
+real H = 5;
+
+real meshLineSize = 1;
+real meshCircleSize = 0.1;
+
+int mmax = 2;
+int m = 0;
+
+int lmax = 250;
+int l = 0;
+
+real error = 0.1;
+real criterion = 0.01;
+
+func string typoTitleCircle(int count){
+    string title;
+    if (count<10){
+            title = "../circles/circle_00" + count + ".txt";
+        }
+    else if (count<100) {
+        title = "../circles/circle_0" + count + ".txt";
+    }
+    else {
+        title = "../circles/circle_" + count + ".txt";
+    }
+    return title;
+}
+
+func string typoTitleMesh(int count){
+    string title;
+    if (count<10){
+            title = "mesh/cad_00" + count + ".msh";
+        }
+    else if (count<100) {
+        title = "mesh/cad_0" + count + ".msh";
+    }
+    else {
+        title = "mesh/cad_" + count + ".msh";
+    }
+    return title;
+}
+
+func string typoTitleVtu(int count){
+    string title;
+    if (count<10){
+            title = "vtu/cad_00" + count + ".vtu";
+        }
+    else if (count<100) {
+        title = "vtu/cad_0" + count + ".vtu";
+    }
+    else {
+        title = "vtu/cad_" + count + ".vtu";
+    }
+    return title;
+}
+
+while (m<mmax){
+    while (l<lmax){
+        cout << "Iter: " << m*lmax+l+1 << "/" << mmax*lmax << endl;
+        real xstart;
+        real ystart;
+        real L;
+        real H;
+
+        ifstream file(typoTitleCircle(m*lmax+l));
+        file >> xstart;
+        file >> ystart;
+        file >> L;
+        file >> H;
+
+        //inflow
+        border ba(t=0,1.0){x=xstart;y=(1-t)*(ystart+H)+t*(ystart-H);label=1;};
+        // outflow
+        border bb(t=0,1.0){x=L;y=t*(ystart+H)+(1-t)*(ystart-H);label=2;};
+        // wall
+        border bc(t=0,1.0){x=(1-t)*xstart+t*L;y=ystart-H;label=3;};
+        border bd(t=0,1.0){x=t*xstart+(1-t)*L;y=ystart+H;label=3;};
+
+        if (m==0){
+            real xc;
+            real yc;
+            real r0;
+
+            file >> xc;
+            file >> yc;
+            file >> r0;
+            
+            border circle(t=0, 2*pi)
+            {
+                x = r0*cos(t) + xc;
+                y = r0*sin(t) + yc;
+                label = 4;
+            };
+
+            int nFlow = 2*H/meshLineSize;
+            int nWall = L/meshLineSize;
+            int nCircle = 2*pi*r0/meshCircleSize;
+
+            mesh Th = buildmesh(ba(nFlow)+bb(nFlow)+bc(nWall)+bd(nWall)+circle(-nCircle));
+            savemesh(Th, typoTitleMesh(m*lmax+l));
+
+            fespace Xh(Th,[P2,P2,P1]);
+            Xh [u1,u2,p], [v1,v2,q];
+
+            macro d11(u1) dx(u1) //
+            macro d22(u2) dy(u2) //
+            macro d12(u1,u2) (dy(u1) + dx(u2))/2.0 //
+            macro div(u1,u2) (dx(u1) + dy(u2)) //
+
+            problem Stokes([u1,u2,p],[v1,v2,q],solver=UMFPACK)
+            = int2d(Th)( 
+                + 2.0*nu * (d11(u1)*d11(v1)+2.0*d12(u1,u2)*d12(v1,v2)+d22(u2)*d22(v2))
+                - p * div(v1, v2)
+                - q * div(u1, u2)
+            )
+            + on(3, u2=0) 
+            + on(1, u1=1.0, u2=0)
+            + on(4, u1=0, u2=0);
+
+            Stokes;
+            savevtk(typoTitleVtu(m*lmax+l), Th, u1, u2, p, dataname="u v p", bin=false);
+        }
+
+        else if (m==1){
+            real xc1;
+            real yc1;
+            real r01;
+
+            file >> xc1;
+            file >> yc1;
+            file >> r01;
+            
+            border circle1(t=0, 2*pi)
+            {
+                x = r01*cos(t) + xc1;
+                y = r01*sin(t) + yc1;
+                label = 4;
+            };
+            int nCircle1 = 2*pi*r01/meshCircleSize;
+
+            real xc2;
+            real yc2;
+            real r02;
+
+            file >> xc2;
+            file >> yc2;
+            file >> r02;
+            
+            border circle2(t=0, 2*pi)
+            {
+                x = r02*cos(t) + xc2;
+                y = r02*sin(t) + yc2;
+                label = 4;
+            };
+            int nCircle2 = 2*pi*r02/meshCircleSize;
+
+            int nFlow = 2*H/meshLineSize;
+            int nWall = L/meshLineSize;
+            
+            mesh Th = buildmesh(ba(nFlow)+bb(nFlow)+bc(nWall)+bd(nWall)+circle1(-nCircle1)+circle2(-nCircle2));
+            savemesh(Th, typoTitleMesh(m*lmax+l));
+
+            fespace Xh(Th,[P2,P2,P1]);
+            Xh [u1,u2,p], [v1,v2,q];
+
+            macro d11(u1) dx(u1) //
+            macro d22(u2) dy(u2) //
+            macro d12(u1,u2) (dy(u1) + dx(u2))/2.0 //
+            macro div(u1,u2) (dx(u1) + dy(u2)) //
+
+            problem Stokes([u1,u2,p],[v1,v2,q],solver=UMFPACK)
+            = int2d(Th)( 
+                + 2.0*nu * (d11(u1)*d11(v1)+2.0*d12(u1,u2)*d12(v1,v2)+d22(u2)*d22(v2))
+                - p * div(v1, v2)
+                - q * div(u1, u2)
+            )
+            + on(3, u2=0) 
+            + on(1, u1=1.0, u2=0)
+            + on(4, u1=0, u2=0);
+
+            Stokes;
+            savevtk(typoTitleVtu(m*lmax+l), Th, u1, u2, p, dataname="u v p", bin=false);  
+        }
+        l = l+1;
+    }
+    l = 0;
+    m = m+1;
+}
