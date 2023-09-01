@@ -3,6 +3,7 @@ import os.path as osp
 import numpy as np
 from alive_progress import alive_bar
 
+# Number of circles
 n = 500
 wdir = osp.join(os.getcwd(), os.pardir)
 
