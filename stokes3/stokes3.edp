@@ -3,22 +3,25 @@ load "iovtk"
 load "mshmet"
 load "medit"
 
+// Iterations
 int n = 500;
 int count = 0;
 
+// Physical labels
 int inflow = 1;
 int outflow = 2;
-
 int obstacle = 4;
-
 int Ywalls = 31;
 int Zwalls = 32;
-
 int fluid = 5;
 
+// Parameters
 real nu = 1.0/400.0;
 
 func string typoTitleCircle(int count){
+    /*
+    Return the title of the file containing the circle's parameters
+    */
     string title;
     if (count<10){
             title = "../circles/circle_00" + count + ".txt";
@@ -33,6 +36,9 @@ func string typoTitleCircle(int count){
 }
 
 func string typoTitleMesh(int count){
+    /*
+    Return the title of the file containing the mesh
+    */
     string title;
     if (count<10){
             title = "mesh/cad_00" + count + ".msh";
@@ -47,6 +53,9 @@ func string typoTitleMesh(int count){
 }
 
 func string typoTitleVtu(int count){
+    /*
+    Return the title of the file containing the vtu
+    */
     string title;
     if (count<10){
             title = "vtu/cad_00" + count + ".vtu";
@@ -61,6 +70,9 @@ func string typoTitleVtu(int count){
 }
 
 func string typoTitleSol(int count){
+    /*
+    Return the title of the file containing the sol
+    */
     string title;
     if (count<10){
             title = "sol/cad_00" + count + ".sol";
@@ -114,6 +126,7 @@ while (count < n){
 
 	savevtk(typoTitleVtu(count), Th, ux, uy, uz, p, dataname="u v w p", bin=false);
 
+    // Adaptation metric
 	real[int] M = mshmet(Th,ux);
 	cout << M.min << " " << M.max << endl;
 
