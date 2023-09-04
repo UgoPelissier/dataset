@@ -16,7 +16,8 @@ FreeFem++ stokes.edp
 
 - The python file generates the CAD files that can be read by *GMSH* to generate a mesh (```geo/cad_*.geo``` files).
 - The *FreeFem++* file generates the mesh (```mesh/cad_*.msh``` files), solves the Stokes equation and saves the solution in a ```vtk``` file.
-- The ```vtk``` file can be read by *Paraview* to visualize the solution.
+
+The ```vtk``` file can be read by *Paraview* to visualize the solution.
 
 ## Stokes 3d
 
@@ -36,3 +37,5 @@ FreeFem++ stokes3.edp
 - The python file generates the CAD files that can be read by *GMSH* to generate a mesh (```geo/cad_*.geo``` files).
 - The ```mesh.sh``` file generates the mesh (```mesh/cad_*.msh``` files) using *GMSH*.
 - The *FreeFem++* file reads the mesh, solves the Stokes equation and saves the solution in a ```vtu``` file and the metric for mesh adaptation in a ```sol``` file.
+
+The ```vtu``` file can be read by *Paraview* to visualize the solution.
