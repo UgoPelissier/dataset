@@ -2,10 +2,15 @@ import os
 import os.path as osp
 import numpy as np
 from alive_progress import alive_bar
+import argparse
+ 
+# Initialize parser
+parser = argparse.ArgumentParser()
+parser.parse_args()
 
-# Number of circles
-n = 500
+# Number of circles files
 wdir = osp.join(os.getcwd(), os.pardir)
+n = len(os.listdir(osp.join(wdir, 'circles')))
 
 os.makedirs(osp.join(os.getcwd(), 'geo'), exist_ok=True)
 
