@@ -5,6 +5,6 @@ python="/mnt/host/c/Anaconda3/python.exe"
 freefem="/mnt/host/c/Users/ugo.pelissier/FreeFem++/FreeFem++.exe"
 
 cd stokes3
-python geo.py
+$python geo.py
 bash ./mesh.sh
-FreeFem++ stokes3.edp
+$freefem stokes3.edp
