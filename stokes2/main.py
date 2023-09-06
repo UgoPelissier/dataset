@@ -1,3 +1,4 @@
+import argparse
 import os
 import os.path as osp
 from typing import List, Tuple
@@ -257,32 +258,34 @@ def create_mesh(
 if __name__ == '__main__':
     random.seed(42)
 
+    # Directory parameters
     wdir = osp.join(os.getcwd(), os.pardir)
     dir = os.getcwd()
-    
-    # Channel parameters
-    m = 2
-    n = 250
-    L_ref = 40.0
-    H_ref = 5.0
-    r_start = 0.5
-    r_end = 1.5
-    margin = 0.5
-    mesh_line_size = 1.0
-    mesh_circle_size = 0.1
 
-    with alive_bar(total=m*n) as bar:
-        for i in range(m):
-            for j in range(n):
+    # Read arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', type=int, default=1, help='Maximum number of holes in the domain')
+    parser.add_argument('-n', type=int, default=250, help='Number of files to create for each number of holes')
+    parser.add_argument('-r', type=float, nargs=2, default=[0.5, 1.5], help='Range of the radius of the holes')
+    parser.add_argument('-L_ref', type=float, default=40.0, help='Reference length of the channel')
+    parser.add_argument('-H_ref', type=float, default=5.0, help='Reference height of the channel')
+    parser.add_argument('-m', type=float, default=0.5, help='Margin between the holes and the domain borders')
+    parser.add_argument('-l', type=float, default=1.0, help='Mesh size of the lines')
+    parser.add_argument('-c', type=float, default=0.1, help='Mesh size of the circles')
+    args = parser.parse_args()
+
+    with alive_bar(total=args.p*args.n) as bar:
+        for i in range(args.p):
+            for j in range(args.n):
                 # Randomly generate the position of the channel
                 x_start = random.random()
                 y_start = random.random()
-                L = L_ref*(0.25*random.random()+0.75)
-                H = H_ref*(0.25*random.random()+0.75)
+                L = args.L_ref*(0.25*random.random()+0.75)
+                H = args.H_ref*(0.25*random.random()+0.75)
 
                 # Randomly generate the position of the circles
-                c, R = create_circles(wdir, (i+1), x_start, y_start, L, H, r_start, r_end, margin, i*n+j)
+                c, R = create_circles(wdir, (i+1), x_start, y_start, L, H, args.r[0], args.r[1], args.m, i*args.n+j)
 
                 # Create the mesh
-                create_mesh(dir, x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, i*n+j)
+                create_mesh(dir, x_start, y_start, L, H, c, R, args.l, args.c, i*args.n+j)
                 bar()
