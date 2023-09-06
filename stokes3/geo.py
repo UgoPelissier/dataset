@@ -6,7 +6,9 @@ import argparse
  
 # Initialize parser
 parser = argparse.ArgumentParser()
-parser.parse_args()
+parser.add_argument('-l', type=float, default=1.0, help='Mesh size of the lines')
+parser.add_argument('-c', type=float, default=0.1, help='Mesh size of the circles')
+args = parser.parse_args()
 
 # Number of circles files
 wdir = osp.join(os.getcwd(), os.pardir)
@@ -30,8 +32,10 @@ with alive_bar(total=n) as bar:
                 geo.write('//+\nMesh.MshFileVersion = 2.2;\n')
                 geo.write('//+\nSetFactory("OpenCASCADE");\n')
                 geo.write('//+\nBox({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, xstart, -H+ystart, 0, L-xstart, 2*H, 1))
+                geo.write(f'//+\nl = {args.l};\n')
                 for j in range(len(lines)-1):
                     geo.write('//+\nCylinder({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:s}}};\n'.format(2+j, c[j,0], c[j,1], 0, 0, 0, 1, R[j], "2*Pi"))
+                    geo.write(f'//+\nc{j} = {args.c*R[j]};\n')
 
                 geo.write('//+\nBooleanDifference{ ')
                 geo.write('Volume{{{:d}}}; Delete; '.format(1))
