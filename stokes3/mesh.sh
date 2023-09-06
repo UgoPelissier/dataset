@@ -13,16 +13,7 @@ printf "\rProgress : [${_fill// /#}${_empty// /-}] ${_progress}%% (${i}/${Nfiles
 
 }
 
-# Read Nfiles from command line
-for arg in "$@"
-do
-   key=$(echo $arg | cut -f1 -d=)
-
-   key_length=${#key}
-   value="${arg:$key_length+1}"
-
-   export "$key"="$value"
-done
+Nfiles=$(find ../circles/ -maxdepth 1 -type f|wc -l)
 
 # gmsh path
 gmsh="/mnt/host/c/Users/ugo.pelissier/gmsh/gmsh.exe"
