@@ -4,7 +4,7 @@ clear
 python="/mnt/host/c/Anaconda3/python.exe"
 freefem="/mnt/host/c/Users/ugo.pelissier/FreeFem++/FreeFem++.exe"
 
-while getopts u:a:f: flag
+while getopts p:n:rmin:rmax:L_ref:H_ref:m:l:c: flag
 do
     case "${flag}" in
         p) p=${OPTARG};;
