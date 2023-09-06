@@ -48,7 +48,7 @@ with alive_bar(total=n) as bar:
                 geo.write('};\n')
 
                 geo.write('//+\nPhysical Surface("{:s}", {:d}) = {{{:d}, {:d}}};\n'.format('WALL_Y', 31, 2, 4))
-                geo.write('//+\nPhysical Surface("{:s}", {:d}) = {{{:d}, {:d}}};\n'.format('WALL_z', 32, 3, 5))
+                geo.write('//+\nPhysical Surface("{:s}", {:d}) = {{{:d}, {:d}}};\n'.format('WALL_Z', 32, 3, 5))
 
                 geo.write('//+\nPhysical Volume("{:s}", {:d}) = {{{:d}}};\n'.format('FLUID', 5, 1))
 
