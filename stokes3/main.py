@@ -205,7 +205,7 @@ def create_mesh(
     # Generate mesh
     geometry.generate_mesh(dim=3)
 
-    gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh'.format(index)))
+    gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh2'.format(index)))
     
     gmsh.clear()
     geometry.__exit__()

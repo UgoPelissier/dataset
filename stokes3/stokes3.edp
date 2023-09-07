@@ -41,13 +41,13 @@ func string typoTitleMesh(int count){
     */
     string title;
     if (count<10){
-            title = "mesh/cad_00" + count + ".msh";
+            title = "mesh/cad_00" + count + ".msh2";
         }
     else if (count<100) {
-        title = "mesh/cad_0" + count + ".msh";
+        title = "mesh/cad_0" + count + ".msh2";
     }
     else {
-        title = "mesh/cad_" + count + ".msh";
+        title = "mesh/cad_" + count + ".msh2";
     }
     return title;
 }
