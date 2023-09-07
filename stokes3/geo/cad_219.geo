@@ -9,7 +9,7 @@ l = 1.0;
 //+
 Cylinder(2) = {25.042693, -0.990286, 0.000000, 0.000000, 0.000000, 1.000000, 1.316453, 2*Pi};
 //+
-c0 = 0.13164530000000002;
+c0 = 0.13164532259331305;
 //+
 BooleanDifference{ Volume{1}; Delete; }{ Volume{2}; Delete; }
 //+
@@ -33,4 +33,4 @@ RefineMesh;
 //+
 Mesh 3;
 //+
-Save "cad_219.msh";
+Save "cad_000.msh";
