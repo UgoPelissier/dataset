@@ -21,5 +21,4 @@ done
 
 cd stokes3
 $python geo.py -l $l -c $c
-bash ./mesh.sh
 $freefem stokes3.edp
