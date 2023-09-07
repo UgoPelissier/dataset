@@ -1,46 +1,30 @@
 //+
+Mesh.MshFileVersion = 2.2;
+//+
 SetFactory("OpenCASCADE");
 //+
-Point(1) = {0.693313, -3.448072, 0.000000, 1.000000};
+Rectangle(1) = {0.693313, -3.448072, 0.000000, 31.229328, 8.116298, 0.000000};
 //+
-Point(2) = {32.615955, -3.448072, 0.000000, 1.000000};
+l = 1.0;
 //+
-Point(3) = {32.615955, 4.668225, 0.000000, 1.000000};
+MeshSize {1, 2, 3, 4} = l;
 //+
-Point(4) = {0.693313, 4.668225, 0.000000, 1.000000};
+Disk(2) = {9.500643, -1.712505, 0.000000, 0.707278, 0.707278};
 //+
-Line(1) = {4, 1};
+c0 = 0.07072777948546403;
 //+
-Line(2) = {1, 2};
+MeshSize {5} = c0;
 //+
-Line(3) = {2, 3};
+BooleanDifference{ Surface{1}; Delete; }{ Surface{2}; Delete; }
 //+
-Line(4) = {3, 4};
+Physical Curve("INFLOW", 1) = {2};
 //+
-Curve Loop(1) = {1, 2, 3, 4};
+Physical Curve("OUTFLOW", 2) = {3};
 //+
-Point(6) = {10.207921, -1.712505, 0.000000, 0.070728};
+Physical Curve("WALL_BOUNDARY", 3) = {1, 4};
 //+
-Point(5) = {9.500643, -1.712505, 0.000000, 0.070728};
+Physical Curve("OBSTACLE", 4) = {5};
 //+
-Point(7) = {9.147004, -1.099985, 0.000000, 0.070728};
+Physical Surface("FLUID", 5) = {1};
 //+
-Point(8) = {9.147004, -2.325026, 0.000000, 0.070728};
-//+
-Ellipse(5) = {6, 5, 7, 7};
-//+
-Ellipse(6) = {7, 5, 8, 8};
-//+
-Ellipse(7) = {8, 5, 6, 6};
-//+
-Curve Loop(2) = {5, 6, 7};
-//+
-Plane Surface(2) = {1, 2};
-//+
-Physical Curve("INFLOW", 100) = {1};
-//+
-Physical Curve("OUTFLOW", 101) = {3};
-//+
-Physical Curve("WALL_BOUNDARY", 102) = {2, 4};
-//+
-Physical Curve("OBSTACLE", 103) = {5, 6, 7};
+Mesh 2;
