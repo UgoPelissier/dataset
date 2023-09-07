@@ -37,8 +37,6 @@ The *stokes3* dataset is a 3d dataset with 3 velocity components and 1 pressure 
 
 The domain is a cube with one or two circular cylinders. U-velocity is set to one on the left boundary.
 
-Pay attention, stokes2 script must have been run before running stokes3 script, in order to create the circles.txt files.
-
 The `stokes3.sh` file contains the commands to generate the dataset. The `stokes3.sh` file can be run with the command:
 
 ```bash
