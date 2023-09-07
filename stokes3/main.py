@@ -122,9 +122,11 @@ def create_geo(
         geo.write('//+\nSetFactory("OpenCASCADE");\n')
         geo.write('//+\nBox({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 1))
         geo.write(f'//+\nl = {mesh_line_size};\n')
+        geo.write('//+\nMeshSize {1, 2, 3, 4, 6, 5, 7, 8} = l;\n')
         for j in range(len(R)):
             geo.write('//+\nCylinder({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:s}}};\n'.format(2+j, c[j][0], c[j][1], 0, 0, 0, 1, R[j], "2*Pi"))
             geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
+            geo.write('//+\nMeshSize {{{:d}, {:d}}} = c{:d};\n'.format(8+2*j+1, 8+2*(j+1), j))
 
         geo.write('//+\nBooleanDifference{ ')
         geo.write('Volume{{{:d}}}; Delete; '.format(1))
@@ -150,11 +152,7 @@ def create_geo(
 
         geo.write('//+\nPhysical Volume("{:s}", {:d}) = {{{:d}}};\n'.format('FLUID', 5, 1))
 
-        geo.write('//+\nMesh 1;\n')
-        geo.write('//+\nRefineMesh;\n')
-        geo.write('//+\nRefineMesh;\n')
-        geo.write('//+\nMesh 3;\n')
-        geo.write('//+\nSave "cad_{:03d}.msh";\n'.format(i))
+        geo.write('//+\nMesh 2;\n')
         
 def create_mesh(
     x_start: float,
@@ -217,7 +215,7 @@ if __name__ == '__main__':
 
     # Read arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', type=int, default=1, help='Maximum number of holes in the domain')
+    parser.add_argument('-p', type=int, default=2, help='Maximum number of holes in the domain')
     parser.add_argument('-n', type=int, default=250, help='Number of files to create for each number of holes')
     parser.add_argument('-r', type=float, nargs=2, default=[0.5, 1.5], help='Range of the radius of the holes')
     parser.add_argument('-L_ref', type=float, default=40.0, help='Reference length of the channel')
