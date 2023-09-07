@@ -1,35 +1,13 @@
-import argparse
+import random
 import os
 import os.path as osp
-from typing import List, Tuple
+from typing import List
 import numpy as np
-import random
 from alive_progress import alive_bar
-import enum
-
+import argparse
 import pygmsh
-from pygmsh.common.point import Point
-from pygmsh.common.line import Line
-from pygmsh.common.curve_loop import CurveLoop
-from pygmsh.geo.geometry import Circle
-from pygmsh.common.plane_surface import PlaneSurface
 import gmsh
-
-
-class NodeType(enum.IntEnum):
-    """
-    Define the code for the one-hot vector representing the node types.
-    Note that this is consistent with the codes provided in the original
-    MeshGraphNets study: 
-    https://github.com/deepmind/deepmind-research/tree/master/meshgraphnets
-    """
-    NORMAL = 0
-    INFLOW = 1
-    OUTFLOW = 2
-    WALL_BOUNDARY = 3
-    OBSTACLE = 4
-    SIZE = 5
-
+from pygmsh.occ.dummy import Dummy
 
 def too_close(
         x1: float,
@@ -84,7 +62,7 @@ def outside(
         return True
     else:
         return False
-    
+
 def create_circles(
         wdir: str,
         n: int,
@@ -96,7 +74,7 @@ def create_circles(
         r_end: float,
         margin: float,
         index: int
-) -> Tuple[List[List[float]], List[float]]:
+) -> tuple:
     """Create a list of circles with random positions and radius."""
     c = []
     R = []
@@ -128,129 +106,103 @@ def create_circles(
             f.write('{:f} {:f} {:f}\n'.format(c[i][0], c[i][1], R[i]))
     return c, R
 
-def write_geo(
-        dir: str,
-        index: int,
-        points: List[Point],
-        lines: List[Line],
-        curve: CurveLoop,
-        circles: List[Circle],
-        plane_surface: PlaneSurface,
-        physical_curves: List
-) -> None:
-    """Write the geometry to a .geo file."""
-    os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
-    with open(osp.join(dir, 'geo', 'cad_{:03d}.geo'.format(index)), 'w') as geo:
-        points_id = []
-        geo.write(f'//+\nSetFactory("OpenCASCADE");\n')
+def create_geo(
+    x_start: float,
+    y_start: float,
+    L: float,
+    H: float,
+    c: List[List[float]],
+    R: List[float],
+    mesh_line_size: float,
+    mesh_circle_size: float,
+    index: int
+)->None:
+    with open(osp.join(os.getcwd(), 'geo', 'cad_{:03d}.geo'.format(index)), 'w') as geo:
+        geo.write('//+\nMesh.MshFileVersion = 2.2;\n')
+        geo.write('//+\nSetFactory("OpenCASCADE");\n')
+        geo.write('//+\Rectangle({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 0))
+        geo.write(f'//+\nl = {mesh_line_size};\n')
+        geo.write('//+\nMeshSize {1, 2, 3, 4} = l;\n')
+        for j in range(len(R)):
+            geo.write('//+\Disk({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(2+j, c[j][0], c[j][1], 0, R[j], R[j]))
+            geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
+            geo.write('//+\nMeshSize {{{:d}}} = c{:d};\n'.format(4+j+1), j)
 
-        # Write points
-        for point in points:
-            geo.write('//+\nPoint({:d}) = {{{:f}, {:f}, {:f}, {:f}}};\n'.format(point._id, point.x[0], point.x[1], point.x[2], point.mesh_size))
-            points_id.append(point._id)
+        geo.write('//+\nBooleanDifference{ ')
+        geo.write('Surface{{{:d}}}; Delete; '.format(1))
+        geo.write('}{ ')
+        for j in range(len(R)):
+            geo.write('Surface{{{:d}}}; '.format(2+j))
+        geo.write('Delete; }\n')
 
-        # Write lines
-        for line in lines:
-            geo.write('//+\nLine({:d}) = {{{:d}, {:d}}};\n'.format(line._id, line.points[0]._id, line.points[1]._id))
-
-        geo.write('//+\nCurve Loop({:d}) = {{{:d}, {:d}, {:d}, {:d}}};\n'.format(curve._id, curve.curves[0]._id, curve.curves[1]._id, curve.curves[2]._id, curve.curves[3]._id))
-
-        # Write circles points
-        for circle in circles:
-            for arc_circle in circle.curve_loop.curves:
-                for point in arc_circle.points:
-                    if point._id not in points_id:
-                        geo.write('//+\nPoint({:d}) = {{{:f}, {:f}, {:f}, {:f}}};\n'.format(point._id, point.x[0], point.x[1], point.x[2], point.mesh_size))
-                        points_id.append(point._id)
-
-        # Write circles ellipses
-        for circle in circles:
-            for arc_circle in circle.curve_loop.curves:
-                geo.write('//+\nEllipse({:d}) = {{{:d}, {:d}, {:d}, {:d}}};\n'.format(arc_circle._id, arc_circle.points[0]._id, arc_circle.points[1]._id, arc_circle.points[2]._id, arc_circle.points[2]._id))
-            geo.write('//+\nCurve Loop({:d}) = {{{:d}, {:d}, {:d}}};\n'.format(circle.curve_loop._id, circle.curve_loop.curves[0]._id, circle.curve_loop.curves[1]._id, circle.curve_loop.curves[2]._id))
-
-        # Write plane surface
-        geo.write('//+\nPlane Surface({:d}) = '.format(plane_surface._id))
+        geo.write('//+\nPhysical Curve("{:s}", {:d}) = {{{:d}}};\n'.format('INFLOW', 1, 2))
+        geo.write('//+\nPhysical Curve("{:s}", {:d}) = {{{:d}}};\n'.format('OUTFLOW', 2, 3))
+        geo.write('//+\nPhysical Curve("{:s}", {:d}) = {{{:d}, {:d}}};\n'.format('WALL_BOUNDARY', 3, 1, 4))
+        geo.write('//+\nPhysical Curve("{:s}", {:d}) = '.format('OBSTACLE', 4))
         geo.write('{')
-        # Write control surface and first hole
-        geo.write('{:d}, {:d}'.format(plane_surface.curve_loop._id, plane_surface.holes[0]._id))
-        # Write the rest of the holes
-        for hole in plane_surface.holes[1:]:
-            geo.write(', {:d}'.format(hole._id))
+        for j in range(len(R)):
+            if (j==len(R)-1):
+                geo.write('{:d}'.format(5+j))
+            else:
+                geo.write('{:d}, '.format(5+j))
         geo.write('};\n')
 
-        # Write physical entities
-        id = 100
-        for physical_curve in physical_curves:
-            curve = physical_curve[0]
-            label = physical_curve[1]
-            geo.write('//+\nPhysical Curve("{:s}", {:d}) = '.format(label, id))
-            geo.write('{')
-            # Write first curve
-            geo.write('{:d}'.format(curve[0]._id))
-            # Write the rest of the curves
-            for c in curve[1:]:
-                geo.write(', {:d}'.format(c._id))
-            geo.write('};\n')
-            id+=1
-            
+        geo.write('//+\nPhysical Surface("{:s}", {:d}) = {{{:d}}};\n'.format('FLUID', 5, 1))
+
+        geo.write('//+\nMesh 2;\n')
+        
 def create_mesh(
-        dir: str,
-        x_start: float,
-        y_start: float,
-        L: float,
-        H: float,
-        c: List[List[float]],
-        R: List[float],
-        mesh_line_size: float,
-        mesh_circle_size: float,
-        index: int
-) -> None:
-    """Create a mesh using GMSH."""
+    x_start: float,
+    y_start: float,
+    L: float,
+    H: float,
+    c: List[List[float]],
+    R: List[float],
+    mesh_line_size: float,
+    mesh_circle_size: float,
+    index: int
+)->None:
+    create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
 
     # Initialize empty geometry using the build in kernel in GMSH
-    geometry = pygmsh.geo.Geometry()
+    geometry = pygmsh.occ.geometry.Geometry()
+
     # Fetch model we would like to add data to
     model = geometry.__enter__()
 
-    # Add points
-    points = [model.add_point(x=(x_start, y_start-H, 0), mesh_size=mesh_line_size),
-            model.add_point(x=(x_start+L, y_start-H, 0), mesh_size=mesh_line_size),
-            model.add_point(x=(x_start+L, y_start+H, 0), mesh_size=mesh_line_size),
-            model.add_point(x=(x_start, y_start+H, 0), mesh_size=mesh_line_size)]
-
-    # Add lines between all points creating the rectangle
-    channel_lines = [model.add_line(p0=points[i], p1=points[i+1]) for i in range(-1, len(points)-1)]
-
-    # Create a line loop
-    channel_loop = model.add_curve_loop(curves=channel_lines)
-
-    # Add circle
-    circles = []
-    holes = []
-    curves = []
-    for i in range(len(R)):
-        circle = model.add_circle(x0=c[i], radius=R[i], mesh_size=R[i]*mesh_circle_size)
-        circles.append(circle)
-        holes.append(circle.curve_loop)
-        for curve in circle.curve_loop.curves:
-            curves.append(curve)
-
-    # Create a plane surface for meshing
-    plane_surface = model.add_plane_surface(curve_loop=channel_loop, holes=holes)
-
-    # Call gmsh kernel before add physical entities
+    # Add box to model
+    box = model.add_box([x_start, -H+y_start, 0], [L-x_start, 2*H, 1])
     model.synchronize()
 
-    model.add_physical(entities=[plane_surface], label="VOLUME")
-    model.add_physical(entities=[channel_lines[0]], label="INFLOW")
-    model.add_physical(entities=[channel_lines[2]], label="OUTFLOW")
-    model.add_physical(entities=[channel_lines[1], channel_lines[3]], label="WALL_BOUNDARY")
-    model.add_physical(entities=curves, label="OBSTACLE")
+    # Add cylinders to model
+    cyl = []
+    for j in range(len(R)):
+        cyl.append(model.add_cylinder(x0=[c[j][0], c[j][1], 0], axis=[0, 0, 1], radius=R[j], angle=2*np.pi))
+        model.synchronize()
 
-    write_geo(dir, index, points, channel_lines, channel_loop, circles, plane_surface, model._PHYSICAL_QUEUE[1:])
+    # Add boolean difference of box and cylinder to model
+    vol = model.boolean_difference([box], cyl, delete_first=True, delete_other=False)
+    model.synchronize()
 
-    geometry.generate_mesh(dim=2)
+    # Set mesh size for box points
+    for j in range(8):
+        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2*len(cyl)+j]], mesh_line_size)
+
+    # Set mesh size for cylinder points
+    for j in range(len(cyl)):
+        gmsh.model.mesh.setSize(gmsh.model.getEntities(0)[2*j:2*(j+1)], mesh_circle_size*R[j])
+
+    # Set physical labels
+    model.add_physical(vol, label='FLUID')
+    model.add_physical(Dummy(gmsh.model.getEntities(2)[3*len(cyl)][0], gmsh.model.getEntities(2)[3*len(cyl)][1]), label='INFLOW')
+    model.add_physical(Dummy(gmsh.model.getEntities(2)[3*len(cyl)+5][0], gmsh.model.getEntities(2)[3*len(cyl)+5][1]), label='OUTFLOW')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(3*len(cyl)+1, 3*len(cyl)+5)], label='WALL_BOUNDARY')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(0,3*len(cyl),3)], label='OBSTACLE')
+
+    # Generate mesh
+    geometry.generate_mesh(dim=3)
+
+    gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh'.format(index)))
     
     gmsh.clear()
     geometry.__exit__()
@@ -258,13 +210,9 @@ def create_mesh(
 if __name__ == '__main__':
     random.seed(42)
 
-    # Directory parameters
-    wdir = osp.join(os.getcwd(), os.pardir)
-    dir = os.getcwd()
-
     # Read arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', type=int, default=1, help='Maximum number of holes in the domain')
+    parser.add_argument('-p', type=int, default=2, help='Maximum number of holes in the domain')
     parser.add_argument('-n', type=int, default=250, help='Number of files to create for each number of holes')
     parser.add_argument('-r', type=float, nargs=2, default=[0.5, 1.5], help='Range of the radius of the holes')
     parser.add_argument('-L_ref', type=float, default=40.0, help='Reference length of the channel')
@@ -273,6 +221,9 @@ if __name__ == '__main__':
     parser.add_argument('-l', type=float, default=1.0, help='Mesh size of the lines')
     parser.add_argument('-c', type=float, default=0.1, help='Mesh size of the circles')
     args = parser.parse_args()
+
+    wdir = osp.join(os.getcwd(), os.pardir)
+    dir = os.getcwd()
 
     with alive_bar(total=args.p*args.n) as bar:
         for i in range(args.p):
@@ -285,7 +236,5 @@ if __name__ == '__main__':
 
                 # Randomly generate the position of the circles
                 c, R = create_circles(wdir, (i+1), x_start, y_start, L, H, args.r[0], args.r[1], args.m, i*args.n+j)
-
-                # Create the mesh
-                create_mesh(dir, x_start, y_start, L, H, c, R, args.l, args.c, i*args.n+j)
+                create_mesh(x_start, y_start, L, H, c, R, args.l, args.c, i*args.n+j)    
                 bar()
