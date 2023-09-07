@@ -7,9 +7,13 @@ Box(1) = {0.417694, -4.040787, 0.000000, 29.790872, 8.311920, 1.000000};
 //+
 l = 1.0;
 //+
+MeshSize {1, 2, 3, 4, 6, 5, 7, 8} = l;
+//+
 Cylinder(2) = {24.206793, 0.981848, 0.000000, 0.000000, 0.000000, 1.000000, 1.332026, 2*Pi};
 //+
 c0 = 0.13320259130717071;
+//+
+MeshSize {9, 10} = c0;
 //+
 BooleanDifference{ Volume{1}; Delete; }{ Volume{2}; Delete; }
 //+
@@ -25,12 +29,4 @@ Physical Surface("WALL_Z", 32) = {3, 5};
 //+
 Physical Volume("FLUID", 5) = {1};
 //+
-Mesh 1;
-//+
-RefineMesh;
-//+
-RefineMesh;
-//+
-Mesh 3;
-//+
-Save "cad_000.msh";
+Mesh 2;
