@@ -120,13 +120,13 @@ def create_geo(
     with open(osp.join(os.getcwd(), 'geo', 'cad_{:03d}.geo'.format(index)), 'w') as geo:
         geo.write('//+\nMesh.MshFileVersion = 2.2;\n')
         geo.write('//+\nSetFactory("OpenCASCADE");\n')
-        geo.write('//+\Rectangle({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 0))
+        geo.write('//+\nRectangle({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 0))
         geo.write(f'//+\nl = {mesh_line_size};\n')
         geo.write('//+\nMeshSize {1, 2, 3, 4} = l;\n')
         for j in range(len(R)):
-            geo.write('//+\Disk({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(2+j, c[j][0], c[j][1], 0, R[j], R[j]))
+            geo.write('//+\nDisk({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(2+j, c[j][0], c[j][1], 0, R[j], R[j]))
             geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
-            geo.write('//+\nMeshSize {{{:d}}} = c{:d};\n'.format(4+j+1), j)
+            geo.write('//+\nMeshSize {{{:d}}} = c{:d};\n'.format(4+j+1, j))
 
         geo.write('//+\nBooleanDifference{ ')
         geo.write('Surface{{{:d}}}; Delete; '.format(1))
@@ -163,6 +163,8 @@ def create_mesh(
     index: int
 )->None:
     create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
+
+    return None
 
     # Initialize empty geometry using the build in kernel in GMSH
     geometry = pygmsh.occ.geometry.Geometry()
