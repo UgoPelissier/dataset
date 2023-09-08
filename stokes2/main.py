@@ -62,6 +62,40 @@ def outside(
         return True
     else:
         return False
+    
+def circles_distance_to_points(
+        x: List[float],
+        y: List[float],
+        c: List[List[float]],
+        R: List[float]
+) -> List[float]:
+    """Calculate the distance between a circle and a list of points."""
+    d = []
+    for i in range(len(x)):
+        tmp = []
+        for j in range(len(c)):
+            tmp.append(np.linalg.norm(np.array([x[i]-c[j][0], y[i]-c[j][1]]))-R[j])
+            d.append(min(tmp))
+    return d
+
+def mesh_size(
+        L: float,
+        H: float,
+        x: List[float],
+        y: List[float],
+        c: List[List[float]],
+        R: List[float]
+) -> List[float]:
+    """Calculate the mesh size for a point of the domain."""
+    d_threshold = np.sqrt(L**2+H**2)/2
+    d = circles_distance_to_points(x, y, c, R)
+    l = []
+    for i in range(len(d)):
+        if (d[i] < d_threshold):
+            l.append(0.1*d[i])
+        else:
+            l.append(0.2*d_threshold)
+    return l
 
 def create_circles(
         wdir: str,
@@ -113,7 +147,7 @@ def create_geo(
     H: float,
     c: List[List[float]],
     R: List[float],
-    mesh_line_size: float,
+    mesh_line_size: List[float],
     mesh_circle_size: float,
     index: int
 )->None:
@@ -122,7 +156,8 @@ def create_geo(
         geo.write('//+\nSetFactory("OpenCASCADE");\n')
         geo.write('//+\nRectangle({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 0))
         geo.write(f'//+\nl = {mesh_line_size};\n')
-        geo.write('//+\nMeshSize {1, 2, 3, 4} = l;\n')
+        for i in range(4):
+            geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size[i]))
         for j in range(len(R)):
             geo.write('//+\nDisk({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(2+j, c[j][0], c[j][1], 0, R[j], R[j]))
             geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
@@ -162,6 +197,8 @@ def create_mesh(
     mesh_circle_size: float,
     index: int
 )->None:
+    mesh_line_size = mesh_size(L, H, [x_start, L, L, x_start], [-H+y_start, -H+y_start, H+y_start, H+y_start], c, R)
+
     create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
 
     # Initialize empty geometry using the build in kernel in GMSH
@@ -185,12 +222,16 @@ def create_mesh(
     model.synchronize()
 
     # Set mesh size for box points
-    for j in range(4):
-        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+j]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)]], mesh_line_size[0])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+1]], mesh_line_size[1])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+2]], mesh_line_size[3])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+3]], mesh_line_size[2])
 
     # Set mesh size for cylinder points
     for j in range(len(disks)):
         gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[j]], mesh_circle_size*R[j])
+
+    model.synchronize()
 
     # Set physical labels
     model.add_physical(surf, label='FLUID')
