@@ -1,21 +1,20 @@
+load"gmsh"
 load "iovtk"
-load "msh3"
+load "mshmet"
+load "medit"
 
-// 2D Stokes problem with circle(s) in the middle of the domain (2D)
+// Iterations
+int n = 500;
+int count = 0;
+
+// Physical labels
+int inflow = 2;
+int outflow = 3;
+int walls = 4;
+int obstacle = 5;
 
 // Parameters
 real nu = 1.0/400.0;
-
-// Mesh size
-real meshLineSize = 1;
-real meshCircleSize = 0.1;
-
-// Iteration
-int mmax = 2;
-int m = 0;
-
-int lmax = 250;
-int l = 0;
 
 func string typoTitleCircle(int count){
     /*
@@ -40,20 +39,20 @@ func string typoTitleMesh(int count){
     */
     string title;
     if (count<10){
-            title = "mesh/cad_00" + count + ".msh";
+            title = "mesh/cad_00" + count + ".msh2";
         }
     else if (count<100) {
-        title = "mesh/cad_0" + count + ".msh";
+        title = "mesh/cad_0" + count + ".msh2";
     }
     else {
-        title = "mesh/cad_" + count + ".msh";
+        title = "mesh/cad_" + count + ".msh2";
     }
     return title;
 }
 
 func string typoTitleVtu(int count){
     /*
-    Return the title of the file containing the solution
+    Return the title of the file containing the vtu
     */
     string title;
     if (count<10){
@@ -68,141 +67,60 @@ func string typoTitleVtu(int count){
     return title;
 }
 
-// Iteration
-while (m<mmax){
-    while (l<lmax){
-        cout << "Iter: " << m*lmax+l+1 << "/" << mmax*lmax << endl;
-        real xstart;
-        real ystart;
-        real L;
-        real H;
-
-        // Read domain parameters
-        ifstream file(typoTitleCircle(m*lmax+l));
-        file >> xstart;
-        file >> ystart;
-        file >> L;
-        file >> H;
-
-        // Inflow
-        border ba(t=0,1.0){x=xstart;y=(1-t)*(ystart+H)+t*(ystart-H);label=1;};
-        // Outflow
-        border bb(t=0,1.0){x=L;y=t*(ystart+H)+(1-t)*(ystart-H);label=2;};
-        // Walls
-        border bc(t=0,1.0){x=(1-t)*xstart+t*L;y=ystart-H;label=3;};
-        border bd(t=0,1.0){x=t*xstart+(1-t)*L;y=ystart+H;label=3;};
-
-        // 1 circle
-        if (m==0){
-            real xc;
-            real yc;
-            real r0;
-
-            // Read circle parameters
-            file >> xc;
-            file >> yc;
-            file >> r0;
-            
-            border circle(t=0, 2*pi)
-            {
-                x = r0*cos(t) + xc;
-                y = r0*sin(t) + yc;
-                label = 4;
-            };
-
-            // Number of elements in each part of the domain
-            int nFlow = 2*H/meshLineSize;
-            int nWall = L/meshLineSize;
-            int nCircle = 2*pi*r0/meshCircleSize;
-
-            mesh Th = buildmesh(ba(nFlow)+bb(nFlow)+bc(nWall)+bd(nWall)+circle(-nCircle));
-            savemesh(Th, typoTitleMesh(m*lmax+l));
-
-            fespace Xh(Th,[P2,P2,P1]);
-            Xh [u1,u2,p], [v1,v2,q];
-
-            macro d11(u1) dx(u1) //
-            macro d22(u2) dy(u2) //
-            macro d12(u1,u2) (dy(u1) + dx(u2))/2.0 //
-            macro div(u1,u2) (dx(u1) + dy(u2)) //
-
-            problem Stokes([u1,u2,p],[v1,v2,q],solver=UMFPACK)
-            = int2d(Th)( 
-                + 2.0*nu * (d11(u1)*d11(v1)+2.0*d12(u1,u2)*d12(v1,v2)+d22(u2)*d22(v2))
-                - p * div(v1, v2)
-                - q * div(u1, u2)
-            )
-            + on(3, u2=0) 
-            + on(1, u1=1.0, u2=0)
-            + on(4, u1=0, u2=0);
-
-            Stokes;
-            savevtk(typoTitleVtu(m*lmax+l), Th, u1, u2, p, dataname="u v p", bin=false);
+func string typoTitleSol(int count){
+    /*
+    Return the title of the file containing the sol
+    */
+    string title;
+    if (count<10){
+            title = "sol/cad_00" + count + ".sol";
         }
-
-        // 2 circles
-        else if (m==1){
-            real xc1;
-            real yc1;
-            real r01;
-
-            file >> xc1;
-            file >> yc1;
-            file >> r01;
-            
-            border circle1(t=0, 2*pi)
-            {
-                x = r01*cos(t) + xc1;
-                y = r01*sin(t) + yc1;
-                label = 4;
-            };
-            int nCircle1 = 2*pi*r01/meshCircleSize;
-
-            real xc2;
-            real yc2;
-            real r02;
-
-            file >> xc2;
-            file >> yc2;
-            file >> r02;
-            
-            border circle2(t=0, 2*pi)
-            {
-                x = r02*cos(t) + xc2;
-                y = r02*sin(t) + yc2;
-                label = 4;
-            };
-            int nCircle2 = 2*pi*r02/meshCircleSize;
-
-            int nFlow = 2*H/meshLineSize;
-            int nWall = L/meshLineSize;
-            
-            mesh Th = buildmesh(ba(nFlow)+bb(nFlow)+bc(nWall)+bd(nWall)+circle1(-nCircle1)+circle2(-nCircle2));
-            savemesh(Th, typoTitleMesh(m*lmax+l));
-
-            fespace Xh(Th,[P2,P2,P1]);
-            Xh [u1,u2,p], [v1,v2,q];
-
-            macro d11(u1) dx(u1) //
-            macro d22(u2) dy(u2) //
-            macro d12(u1,u2) (dy(u1) + dx(u2))/2.0 //
-            macro div(u1,u2) (dx(u1) + dy(u2)) //
-
-            problem Stokes([u1,u2,p],[v1,v2,q],solver=UMFPACK)
-            = int2d(Th)( 
-                + 2.0*nu * (d11(u1)*d11(v1)+2.0*d12(u1,u2)*d12(v1,v2)+d22(u2)*d22(v2))
-                - p * div(v1, v2)
-                - q * div(u1, u2)
-            )
-            + on(3, u2=0) 
-            + on(1, u1=1.0, u2=0)
-            + on(4, u1=0, u2=0);
-
-            Stokes;
-            savevtk(typoTitleVtu(m*lmax+l), Th, u1, u2, p, dataname="u v p", bin=false);  
-        }
-        l = l+1;
+    else if (count<100) {
+        title = "sol/cad_0" + count + ".sol";
     }
-    l = 0;
-    m = m+1;
+    else {
+        title = "sol/cad_" + count + ".sol";
+    }
+    return title;
+}
+
+while (count < n){
+	cout << "Iter: " << count+1 << "/" << n << endl;
+
+	mesh Th = gmshload(typoTitleMesh(count));
+
+	//Fespace
+	fespace Uh(Th, [P2, P2]);
+	Uh [ux, uy];
+	Uh [vx, vy];
+
+	fespace Ph(Th, P1);
+	Ph p;
+	Ph q;
+	Ph metric;
+
+	//Macro
+	macro grad(u) [dx(u), dy(u)] //
+	macro div(ux, uy) (dx(ux) + dy(uy)) //
+
+	//Problem
+	problem Stokes ([ux, uy, p],[vx, vy, q])
+		= int2d(Th)(
+			nu * (
+				grad(ux)' * grad(vx)
+				+ grad(uy)' * grad(vy)
+			)
+			- p * div(vx, vy)
+			- q* div(ux, uy)
+		)
+		+ on(inflow, ux=1., uy=0.)
+		+ on(walls, uy=0.)
+		+ on(obstacle, ux=0., uy=0.)
+		;
+
+	Stokes;
+
+	savevtk(typoTitleVtu(count), Th, ux, uy, p, dataname="u v p", bin=false);
+
+	count++;
 }
