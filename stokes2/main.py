@@ -173,19 +173,16 @@ def create_mesh(
     # Add rectangle to model
     rectangle = model.add_rectangle([x_start, -H+y_start, 0], a=L-x_start, b=2*H)
     model.synchronize()
-    print(gmsh.model.getEntities(1))
 
     # Add disks to model
     disks = []
     for j in range(len(R)):
         disks.append(model.add_disk(x0=[c[j][0], c[j][1], 0], radius0=R[j], radius1=R[j]))
         model.synchronize()
-        print(gmsh.model.getEntities(1))
 
     # Add boolean difference of box and cylinder to model
     surf = model.boolean_difference([rectangle], disks, delete_first=True, delete_other=False)
     model.synchronize()
-    print(gmsh.model.getEntities(1))
 
     # Set mesh size for box points
     for j in range(4):
@@ -197,15 +194,19 @@ def create_mesh(
 
     # Set physical labels
     model.add_physical(surf, label='FLUID')
-    model.add_physical(Dummy(gmsh.model.getEntities(1)[len(disks)][0], gmsh.model.getEntities(1)[len(disks)][1]), label='INFLOW')
-    # model.add_physical(Dummy(gmsh.model.getEntities(2)[3*len(disks)+5][0], gmsh.model.getEntities(2)[3*len(disks)+5][1]), label='OUTFLOW')
-    # model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(3*len(disks)+1, 3*len(disks)+5)], label='WALL_BOUNDARY')
+    model.add_physical(Dummy(gmsh.model.getEntities(1)[len(disks)+1][0], gmsh.model.getEntities(1)[len(disks)+1][1]), label='INFLOW')
+    model.add_physical(Dummy(gmsh.model.getEntities(1)[len(disks)+2][0], gmsh.model.getEntities(1)[len(disks)+2][1]), label='OUTFLOW')
+    model.add_physical([
+        Dummy(gmsh.model.getEntities(1)[len(disks)][0], gmsh.model.getEntities(1)[len(disks)][1]),
+        Dummy(gmsh.model.getEntities(1)[len(disks)+3][0], gmsh.model.getEntities(1)[len(disks)+3][1])
+        ], label='WALL_BOUNDARY')
     model.add_physical([Dummy(gmsh.model.getEntities(1)[j][0], gmsh.model.getEntities(1)[j][1]) for j in range(0,len(disks))], label='OBSTACLE')
 
     # Generate mesh
     geometry.generate_mesh(dim=2)
 
     gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh2'.format(index)))
+    gmsh.write(osp.join(os.getcwd(), 'vtk', 'cad_{:03d}.vtk'.format(index)))
     
     gmsh.clear()
     geometry.__exit__()
@@ -227,6 +228,11 @@ if __name__ == '__main__':
 
     wdir = osp.join(os.getcwd(), os.pardir)
     dir = os.getcwd()
+
+    os.makedirs(osp.join(wdir, 'circles'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'vtk'), exist_ok=True)
 
     with alive_bar(total=args.p*args.n) as bar:
         for i in range(args.p):
