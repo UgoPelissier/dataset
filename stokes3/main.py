@@ -62,6 +62,41 @@ def outside(
         return True
     else:
         return False
+    
+def circles_distance_to_points(
+        x: List[float],
+        y: List[float],
+        c: List[List[float]],
+        R: List[float]
+) -> List[float]:
+    """Calculate the distance between a circle and a list of points."""
+    d = []
+    for i in range(len(x)):
+        tmp = []
+        for j in range(len(c)):
+            tmp.append(np.linalg.norm(np.array([x[i]-c[j][0], y[i]-c[j][1]]))-R[j])
+            d.append(min(tmp))
+    return d
+
+def mesh_size(
+        L: float,
+        H: float,
+        x: List[float],
+        y: List[float],
+        c: List[List[float]],
+        R: List[float]
+) -> List[float]:
+    """Calculate the mesh size for a point of the domain."""
+    d_threshold = np.sqrt(L**2+H**2)/2
+    d = circles_distance_to_points(x, y, c, R)
+    l = []
+    for i in range(len(d)):
+        if (d[i] < d_threshold):
+            l.append(0.1*d[i])
+            l += [0.1*d[i], 0.1*d[i]]
+        else:
+            l += [0.2*d_threshold, 0.2*d_threshold]
+    return l
 
 def create_circles(
         wdir: str,
@@ -122,7 +157,8 @@ def create_geo(
         geo.write('//+\nSetFactory("OpenCASCADE");\n')
         geo.write('//+\nBox({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 1))
         geo.write(f'//+\nl = {mesh_line_size};\n')
-        geo.write('//+\nMeshSize {1, 2, 3, 4, 6, 5, 7, 8} = l;\n')
+        for i in range(8):
+            geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size[i]))
         for j in range(len(R)):
             geo.write('//+\nCylinder({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:s}}};\n'.format(2+j, c[j][0], c[j][1], 0, 0, 0, 1, R[j], "2*Pi"))
             geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
@@ -165,6 +201,8 @@ def create_mesh(
     mesh_circle_size: float,
     index: int
 )->None:
+    mesh_line_size = mesh_size(L, H, [x_start, L, L, x_start], [-H+y_start, -H+y_start, H+y_start, H+y_start], c, R)
+
     create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
 
     # Initialize empty geometry using the build in kernel in GMSH
@@ -184,23 +222,29 @@ def create_mesh(
         model.synchronize()
 
     # Add boolean difference of box and cylinder to model
-    vol = model.boolean_difference([box], cyl, delete_first=True, delete_other=False)
+    vol = model.boolean_difference([box], cyl, delete_first=True, delete_other=True)
     model.synchronize()
 
     # Set mesh size for box points
-    for j in range(8):
-        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2*len(cyl)+j]], mesh_line_size)
-
-    # Set mesh size for cylinder points
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[0]], mesh_line_size[0])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[1]], mesh_line_size[1])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2]], mesh_line_size[2])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[3]], mesh_line_size[3])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[4]], mesh_line_size[4])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[5]], mesh_line_size[5])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[6]], mesh_line_size[6])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+len(cyl)]], mesh_line_size[7])
+    
     for j in range(len(cyl)):
-        gmsh.model.mesh.setSize(gmsh.model.getEntities(0)[2*j:2*(j+1)], mesh_circle_size*R[j])
+        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+j]], mesh_circle_size*R[0])
+        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[8+len(cyl)+j]], mesh_circle_size*R[0])
 
     # Set physical labels
     model.add_physical(vol, label='FLUID')
-    model.add_physical(Dummy(gmsh.model.getEntities(2)[3*len(cyl)][0], gmsh.model.getEntities(2)[3*len(cyl)][1]), label='INFLOW')
-    model.add_physical(Dummy(gmsh.model.getEntities(2)[3*len(cyl)+5][0], gmsh.model.getEntities(2)[3*len(cyl)+5][1]), label='OUTFLOW')
-    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(3*len(cyl)+1, 3*len(cyl)+5)], label='WALL_BOUNDARY')
-    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(0,3*len(cyl),3)], label='OBSTACLE')
+    model.add_physical(Dummy(gmsh.model.getEntities(2)[0][0], gmsh.model.getEntities(2)[0][1]), label='INFLOW')
+    model.add_physical(Dummy(gmsh.model.getEntities(2)[6][0], gmsh.model.getEntities(2)[5][1]), label='OUTFLOW')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(1,5)], label='WALL_BOUNDARY')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(6,6+len(cyl))], label='OBSTACLE')
 
     # Generate mesh
     geometry.generate_mesh(dim=3)
