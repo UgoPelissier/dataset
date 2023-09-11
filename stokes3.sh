@@ -2,10 +2,11 @@
 clear
 
 python="/mnt/host/c/Anaconda3/python.exe"
+gmsh="/mnt/host/c/Users/ugo.pelissier/gmsh/gmsh.exe"
 freefem="/mnt/host/c/Users/ugo.pelissier/FreeFem++/FreeFem++.exe"
 
 if [ "$1" == "-h" ]; then
-    echo "Usage: ./stokes2.sh -l <l> -c <c>"
+    echo "Usage: ./stokes3.sh -l <l> -c <c>"
     echo "l: mesh size of the lines"
     echo "c: mesh size of the circles"
     exit 0
@@ -21,4 +22,6 @@ done
 
 cd stokes3
 $python geo.py -l $l -c $c
+$gmsh convert.geo -
+clear
 $freefem stokes3.edp
