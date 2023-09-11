@@ -9,9 +9,9 @@ MeshSize {1} = 1.179207;
 //+
 MeshSize {2} = 1.179207;
 //+
-MeshSize {3} = 1.179207;
+MeshSize {3} = 0.932033;
 //+
-MeshSize {4} = 1.179207;
+MeshSize {4} = 0.932033;
 //+
 MeshSize {5} = 1.179207;
 //+
