@@ -48,3 +48,5 @@ Physical Surface("WALL_Z", 32) = {3, 5};
 Physical Volume("FLUID", 5) = {1};
 //+
 Mesh 2;
+//+
+Save "../geo_unrolled/cad_433.geo_unrolled";
