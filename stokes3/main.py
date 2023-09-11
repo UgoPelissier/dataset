@@ -216,54 +216,54 @@ def create_mesh(
 
     create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
 
-    # # Initialize empty geometry using the build in kernel in GMSH
-    # geometry = pygmsh.occ.geometry.Geometry()
+    # Initialize empty geometry using the build in kernel in GMSH
+    geometry = pygmsh.occ.geometry.Geometry()
 
-    # # Fetch model we would like to add data to
-    # model = geometry.__enter__()
+    # Fetch model we would like to add data to
+    model = geometry.__enter__()
 
-    # # Add box to model
-    # box = model.add_box([x_start, -H+y_start, 0], [L-x_start, 2*H, 1])
-    # model.synchronize()
+    # Add box to model
+    box = model.add_box([x_start, -H+y_start, 0], [L-x_start, 2*H, 1])
+    model.synchronize()
 
-    # # Add cylinders to model
-    # cyl = []
-    # for j in range(len(R)):
-    #     cyl.append(model.add_cylinder(x0=[c[j][0], c[j][1], 0], axis=[0, 0, 1], radius=R[j], angle=2*np.pi))
-    #     model.synchronize()
+    # Add cylinders to model
+    cyl = []
+    for j in range(len(R)):
+        cyl.append(model.add_cylinder(x0=[c[j][0], c[j][1], 0], axis=[0, 0, 1], radius=R[j], angle=2*np.pi))
+        model.synchronize()
 
-    # # Add boolean difference of box and cylinder to model
-    # vol = model.boolean_difference([box], cyl, delete_first=True, delete_other=True)
-    # model.synchronize()
+    # Add boolean difference of box and cylinder to model
+    vol = model.boolean_difference([box], cyl, delete_first=True, delete_other=True)
+    model.synchronize()
 
-    # # Set mesh size for box points
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[0]], mesh_line_size[0])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[1]], mesh_line_size[1])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2]], mesh_line_size[2])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[3]], mesh_line_size[3])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[4]], mesh_line_size[4])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[5]], mesh_line_size[5])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[6]], mesh_line_size[6])
-    # gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+len(cyl)]], mesh_line_size[7])
+    # Set mesh size for box points
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[0]], mesh_line_size[0])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[1]], mesh_line_size[1])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2]], mesh_line_size[2])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[3]], mesh_line_size[3])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[5]], mesh_line_size[4]) # 5 instead of 4 because of the boolean difference
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[4]], mesh_line_size[5]) # 4 instead of 5 because of the boolean difference
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[6]], mesh_line_size[6])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+len(cyl)]], mesh_line_size[7]) # 7+len(cyl) instead of 7 because of the boolean difference
     
-    # for j in range(len(cyl)):
-    #     gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+j]], mesh_circle_size*R[0])
-    #     gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[8+len(cyl)+j]], mesh_circle_size*R[0])
+    for j in range(len(cyl)):
+        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+j]], mesh_circle_size*R[0])
+        gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[8+len(cyl)+j]], mesh_circle_size*R[0])
 
-    # # Set physical labels
-    # model.add_physical(vol, label='FLUID')
-    # model.add_physical(Dummy(gmsh.model.getEntities(2)[0][0], gmsh.model.getEntities(2)[0][1]), label='INFLOW')
-    # model.add_physical(Dummy(gmsh.model.getEntities(2)[6][0], gmsh.model.getEntities(2)[5][1]), label='OUTFLOW')
-    # model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(1,5)], label='WALL_BOUNDARY')
-    # model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(6,6+len(cyl))], label='OBSTACLE')
+    # Set physical labels
+    model.add_physical(vol, label='FLUID')
+    model.add_physical(Dummy(gmsh.model.getEntities(2)[0][0], gmsh.model.getEntities(2)[0][1]), label='INFLOW')
+    model.add_physical(Dummy(gmsh.model.getEntities(2)[6][0], gmsh.model.getEntities(2)[5][1]), label='OUTFLOW')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(1,5)], label='WALL_BOUNDARY')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(6,6+len(cyl))], label='OBSTACLE')
 
-    # # Generate mesh
-    # geometry.generate_mesh(dim=3)
+    # Generate mesh
+    geometry.generate_mesh(dim=3)
 
-    # gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh2'.format(index)))
+    gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh2'.format(index)))
     
-    # gmsh.clear()
-    # geometry.__exit__()
+    gmsh.clear()
+    geometry.__exit__()
 
 if __name__ == '__main__':
     random.seed(42)
