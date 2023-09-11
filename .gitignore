@@ -1,4 +1,5 @@
-.log
+*.log
+*.geo
 circles
 mesh
 sol
