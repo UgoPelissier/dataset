@@ -156,13 +156,12 @@ def create_geo(
         geo.write('//+\nMesh.MshFileVersion = 2.2;\n')
         geo.write('//+\nSetFactory("OpenCASCADE");\n')
         geo.write('//+\nBox({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 1))
-        geo.write(f'//+\nl = {mesh_line_size};\n')
         for i in range(8):
             geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size[i]))
-        for j in range(len(R)):
-            geo.write('//+\nCylinder({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:s}}};\n'.format(2+j, c[j][0], c[j][1], 0, 0, 0, 1, R[j], "2*Pi"))
-            geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
-            geo.write('//+\nMeshSize {{{:d}, {:d}}} = c{:d};\n'.format(8+2*j+1, 8+2*(j+1), j))
+        for i in range(len(R)):
+            geo.write('//+\nCylinder({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:f}, {:s}}};\n'.format(2+i, c[i][0], c[i][1], 0, 0, 0, 1, R[i], "2*Pi"))
+            for j in range(2):
+                geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(8+2*i+1+j, mesh_circle_size*R[i]))
 
         geo.write('//+\nBooleanDifference{ ')
         geo.write('Volume{{{:d}}}; Delete; '.format(1))
