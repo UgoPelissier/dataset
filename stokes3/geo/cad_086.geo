@@ -3,37 +3,43 @@ Mesh.MshFileVersion = 2.2;
 //+
 SetFactory("OpenCASCADE");
 //+
-Box(1) = {0.550839, -4.438070, 0.000000, 30.381253, 9.980643, 1.000000};
+Box(1) = {0.180263, -4.143646, 0.000000, 39.296420, 8.715677, 1.000000};
 //+
-MeshSize {1} = 3.133205;
+MeshSize {1} = 3.971649;
 //+
-MeshSize {2} = 3.133205;
+MeshSize {2} = 3.971649;
 //+
-MeshSize {3} = 3.133205;
+MeshSize {3} = 0.938353;
 //+
-MeshSize {4} = 3.133205;
+MeshSize {4} = 0.938353;
 //+
-MeshSize {5} = 0.424904;
+MeshSize {5} = 1.398987;
 //+
-MeshSize {6} = 0.424904;
+MeshSize {6} = 1.398987;
 //+
-MeshSize {7} = 0.589307;
+MeshSize {7} = 0.938353;
 //+
-MeshSize {8} = 0.589307;
+MeshSize {8} = 0.938353;
 //+
-Cylinder(2) = {28.238831, -0.384775, 0.000000, 0.000000, 0.000000, 1.000000, 0.617466, 2*Pi};
+Cylinder(2) = {32.967760, 3.344050, 0.000000, 0.000000, 0.000000, 1.000000, 0.537747, 2*Pi};
 //+
-MeshSize {9} = 0.061747;
+MeshSize {9} = 0.053775;
 //+
-MeshSize {10} = 0.061747;
+MeshSize {10} = 0.053775;
 //+
-BooleanDifference{ Volume{1}; Delete; }{ Volume{2}; Delete; }
+Cylinder(3) = {13.294340, 2.321051, 0.000000, 0.000000, 0.000000, 1.000000, 0.631049, 2*Pi};
+//+
+MeshSize {11} = 0.063105;
+//+
+MeshSize {12} = 0.063105;
+//+
+BooleanDifference{ Volume{1}; Delete; }{ Volume{2}; Volume{3}; Delete; }
 //+
 Physical Surface("INFLOW", 1) = {1};
 //+
 Physical Surface("OUTFLOW", 2) = {6};
 //+
-Physical Surface("OBSTACLE", 4) = {7};
+Physical Surface("OBSTACLE", 4) = {7, 8};
 //+
 Physical Surface("WALL_Y", 31) = {2, 4};
 //+
