@@ -26,7 +26,6 @@ done
 
 cd stokes3
 $python main.py -p $p -n $n -l $l -c $c
-$gmsh convert.geo -
+$gmsh convert.geo
 clear
-exit
 $freefem stokes3.edp
