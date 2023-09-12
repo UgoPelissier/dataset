@@ -40,7 +40,7 @@ The domain is a cube with one or two circular cylinders. U-velocity is set to on
 The `stokes3.sh` file contains the commands to generate the dataset. The `stokes3.sh` file can be run with the command:
 
 ```bash
-bash ./stokes3.sh -l 1.0 -c 0.1
+bash ./stokes3.sh -p 2 -l 1.0 -c 0.1
 ```
 
 To get help on the parameters, run:
