@@ -272,8 +272,8 @@ if __name__ == '__main__':
 
     # Read arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', type=int, default=2, help='Maximum number of holes in the domain')
-    parser.add_argument('-n', type=int, default=250, help='Number of files to create for each number of holes')
+    parser.add_argument('-p', type=int, default=2, help='Number of holes in the domain')
+    parser.add_argument('-n', type=int, default=500, help='Number of files to create for each number of holes')
     parser.add_argument('-r', type=float, nargs=2, default=[0.5, 1.5], help='Range of the radius of the holes')
     parser.add_argument('-L_ref', type=float, default=40.0, help='Reference length of the channel')
     parser.add_argument('-H_ref', type=float, default=5.0, help='Reference height of the channel')
@@ -290,20 +290,19 @@ if __name__ == '__main__':
     os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
 
     with open("convert.geo", "w") as f:
-        with alive_bar(total=args.p*args.n) as bar:
-            for i in range(args.p):
-                for j in range(args.n):
-                    # Randomly generate the position of the channel
-                    x_start = random.random()
-                    y_start = random.random()
-                    L = args.L_ref*(0.25*random.random()+0.75)
-                    H = args.H_ref*(0.25*random.random()+0.75)
+        with alive_bar(total=args.n) as bar:
+            for i in range(args.n):
+                # Randomly generate the position of the channel
+                x_start = random.random()
+                y_start = random.random()
+                L = args.L_ref*(0.25*random.random()+0.75)
+                H = args.H_ref*(0.25*random.random()+0.75)
 
-                    # Randomly generate the position of the circles
-                    c, R = create_circles(wdir, (i+1), x_start, y_start, L, H, args.r[0], args.r[1], args.m, i*args.n+j)
-                    create_mesh(x_start, y_start, L, H, c, R, args.l, args.c, i*args.n+j)    
-                    bar()
+                # Randomly generate the position of the circles
+                c, R = create_circles(wdir, args.p, x_start, y_start, L, H, args.r[0], args.r[1], args.m, i)
+                create_mesh(x_start, y_start, L, H, c, R, args.l, args.c, i)    
+                bar()
 
-                    # Write the convert.geo file
-                    f.write('//+\nMerge "{:s}";\n'.format(osp.join(dir, 'geo', 'cad_{:03d}.geo'.format(i*args.n+j))))
-                    f.write('//+\nDelete Model;\n')
+                # Write the convert.geo file
+                f.write('//+\nMerge "{:s}";\n'.format(osp.join(dir, 'geo', 'cad_{:03d}.geo'.format(i))))
+                f.write('//+\nDelete Model;\n')
