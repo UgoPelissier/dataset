@@ -256,7 +256,8 @@ def create_mesh(
     model.add_physical(vol, label='FLUID')
     model.add_physical(Dummy(gmsh.model.getEntities(2)[0][0], gmsh.model.getEntities(2)[0][1]), label='INFLOW')
     model.add_physical(Dummy(gmsh.model.getEntities(2)[6][0], gmsh.model.getEntities(2)[5][1]), label='OUTFLOW')
-    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(1,5)], label='WALL_BOUNDARY')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in [1,3]], label='WALL_Y')
+    model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in [2,4]], label='WALL_Z')
     model.add_physical([Dummy(gmsh.model.getEntities(2)[j][0], gmsh.model.getEntities(2)[j][1]) for j in range(6,6+len(cyl))], label='OBSTACLE')
 
     # Generate mesh

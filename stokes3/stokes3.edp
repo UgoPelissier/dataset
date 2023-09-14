@@ -8,12 +8,12 @@ int n = 500;
 int count = 0;
 
 // Physical labels
-int inflow = 1;
-int outflow = 2;
-int obstacle = 4;
-int Ywalls = 31;
-int Zwalls = 32;
-int fluid = 5;
+int fluid = 1;
+int inflow = 2;
+int outflow = 3;
+int Ywalls = 4;
+int Zwalls = 5;
+int obstacle = 6;
 
 // Parameters
 real nu = 1.0/400.0;
@@ -124,16 +124,16 @@ while (count < n){
 
 	Stokes;
 
-	savevtk(typoTitleVtu(count), Th, ux, uy, uz, p, dataname="u v w p", bin=false);
-
     // Adaptation metric
 	real[int] M = mshmet(Th,ux);
 	cout << M.min << " " << M.max << endl;
 
 	for (int ii = 0; ii < Th.nv; ii++)
 		metric[][ii] = 10*M[ii];
+
+    savevtk(typoTitleVtu(count), Th, ux, uy, uz, p, metric, dataname="u v w p m", bin=false);
 		
-	savesol(typoTitleSol(count), Th, metric);
+	// savesol(typoTitleSol(count), Th, metric);
 
 	count++;
 }
