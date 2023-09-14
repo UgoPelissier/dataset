@@ -5,17 +5,17 @@ SetFactory("OpenCASCADE");
 //+
 Box(1) = {0.335188, -3.772571, 0.000000, 37.176193, 9.181989, 1.000000};
 //+
-MeshSize {1} = 0.818284;
+MeshSize {1} = 0.269988;
 //+
-MeshSize {2} = 0.818284;
+MeshSize {2} = 0.269988;
 //+
-MeshSize {3} = 3.779128;
+MeshSize {3} = 0.551271;
 //+
-MeshSize {4} = 3.779128;
+MeshSize {4} = 0.551271;
 //+
-MeshSize {5} = 0.269988;
+MeshSize {5} = 3.779128;
 //+
-MeshSize {6} = 0.269988;
+MeshSize {6} = 3.779128;
 //+
 MeshSize {7} = 3.779128;
 //+
