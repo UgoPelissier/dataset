@@ -14,7 +14,7 @@ if [ "$1" == "-h" ]; then
     exit 0
 fi
 
-while getopts p:l:c: flag
+while getopts p:n:l:c: flag
 do
     case "${flag}" in
         p) p=${OPTARG};;
@@ -27,5 +27,4 @@ done
 cd stokes3
 $python main.py -p $p -n $n -l $l -c $c
 $gmsh convert.geo
-clear
 $freefem stokes3.edp
