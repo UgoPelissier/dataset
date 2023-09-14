@@ -75,7 +75,7 @@ def circles_distance_to_points(
         tmp = []
         for j in range(len(c)):
             tmp.append(np.linalg.norm(np.array([x[i]-c[j][0], y[i]-c[j][1]]))-R[j])
-            d.append(min(tmp))
+        d.append(min(tmp))
     return d
 
 def mesh_size(
@@ -306,3 +306,4 @@ if __name__ == '__main__':
                 # Write the convert.geo file
                 f.write('//+\nMerge "{:s}";\n'.format(osp.join(dir, 'geo', 'cad_{:03d}.geo'.format(i))))
                 f.write('//+\nDelete Model;\n')
+        f.write('//+\nExit;\n')
