@@ -165,7 +165,7 @@ def create_geo(
         geo.write('//+\nBox({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 1))
         for i in range(8):
             # Set mesh size for box points
-            geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size[i]))
+            geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size))
 
         # Cylinders
         for i in range(len(R)):
@@ -214,8 +214,6 @@ def create_mesh(
     mesh_circle_size: float,
     index: int
 )->None:
-    mesh_line_size = mesh_size(L, H, [x_start, L, L, x_start], [-H+y_start, -H+y_start, H+y_start, H+y_start], c, R)
-
     create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
 
     # Initialize empty geometry using the build in kernel in GMSH
@@ -239,14 +237,14 @@ def create_mesh(
     model.synchronize()
 
     # Set mesh size for box points
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[0]], mesh_line_size[0])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[1]], mesh_line_size[1])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2]], mesh_line_size[2])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[3]], mesh_line_size[3])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[5]], mesh_line_size[4]) # 5 instead of 4 because of the boolean difference
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[4]], mesh_line_size[5]) # 4 instead of 5 because of the boolean difference
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[6]], mesh_line_size[6])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+len(cyl)]], mesh_line_size[7]) # 7+len(cyl) instead of 7 because of the boolean difference
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[0]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[1]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[2]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[3]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[5]], mesh_line_size) # 5 instead of 4 because of the boolean difference
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[4]], mesh_line_size) # 4 instead of 5 because of the boolean difference
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[6]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+len(cyl)]], mesh_line_size) # 7+len(cyl) instead of 7 because of the boolean difference
     
     for j in range(len(cyl)):
         gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[7+j]], mesh_circle_size*R[0])
