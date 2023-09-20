@@ -1,0 +1,139 @@
+load"gmsh"
+load "iovtk"
+load "mshmet"
+load "medit"
+
+// Iterations
+int n = 500;
+int count = 0;
+
+// Physical labels
+int fluid = 1;
+int inflow = 2;
+int outflow = 3;
+int Ywalls = 4;
+int Zwalls = 5;
+int obstacle = 6;
+
+// Parameters
+real nu = 1.0/400.0;
+
+func string typoTitleCircle(int count){
+    /*
+    Return the title of the file containing the circle's parameters
+    */
+    string title;
+    if (count<10){
+            title = "../circles/circle_00" + count + ".txt";
+        }
+    else if (count<100) {
+        title = "../circles/circle_0" + count + ".txt";
+    }
+    else {
+        title = "../circles/circle_" + count + ".txt";
+    }
+    return title;
+}
+
+func string typoTitleMesh(int count){
+    /*
+    Return the title of the file containing the mesh
+    */
+    string title;
+    if (count<10){
+            title = "mesh/cad_00" + count + ".msh2";
+        }
+    else if (count<100) {
+        title = "mesh/cad_0" + count + ".msh2";
+    }
+    else {
+        title = "mesh/cad_" + count + ".msh2";
+    }
+    return title;
+}
+
+func string typoTitleVtu(int count){
+    /*
+    Return the title of the file containing the vtu
+    */
+    string title;
+    if (count<10){
+            title = "vtu/cad_00" + count + ".vtu";
+        }
+    else if (count<100) {
+        title = "vtu/cad_0" + count + ".vtu";
+    }
+    else {
+        title = "vtu/cad_" + count + ".vtu";
+    }
+    return title;
+}
+
+func string typoTitleSol(int count){
+    /*
+    Return the title of the file containing the sol
+    */
+    string title;
+    if (count<10){
+            title = "sol/cad_00" + count + ".sol";
+        }
+    else if (count<100) {
+        title = "sol/cad_0" + count + ".sol";
+    }
+    else {
+        title = "sol/cad_" + count + ".sol";
+    }
+    return title;
+}
+
+while (count < n){
+	cout << "Iter: " << count+1 << "/" << n << endl;
+
+	mesh3 Th = gmshload3(typoTitleMesh(count));
+
+	//Fespace
+	fespace Uh(Th, [P2, P2, P2]);
+	Uh [ux, uy, uz];
+	Uh [vx, vy, vz];
+
+	fespace Ph(Th, P1);
+	Ph p;
+	Ph q;
+	Ph metric;
+
+	//Macro
+	macro grad(u) [dx(u), dy(u), dz(u)] //
+	macro div(ux, uy, uz) (dx(ux) + dy(uy) + dz(uz)) //
+
+	//Problem
+	problem Stokes ([ux, uy, uz, p],[vx, vy, vz, q])
+		= int3d(Th)(
+			nu * (
+				grad(ux)' * grad(vx)
+				+ grad(uy)' * grad(vy)
+				+ grad(uz)' * grad(vz)
+			)
+			- p * div(vx, vy, vz)
+			- q* div(ux, uy, uz)
+		)
+		+ on(inflow, ux=1., uy=0., uz=0.)
+		+ on(Ywalls, uy=0.)
+		+ on(Zwalls, uz=0.)
+		+ on(obstacle, ux=0., uy=0., uz=0.)
+		;
+
+	Stokes;
+
+    // Adaptation metric
+	real[int] M = mshmet(Th,ux);
+	cout << M.min << " " << M.max << endl;
+
+	for (int ii = 0; ii < Th.nv; ii++)
+		metric[][ii] = 10*M[ii];
+
+    savevtk(typoTitleVtu(count), Th, ux, uy, uz, p, metric, dataname="u v w p m", bin=false);
+		
+	// savesol(typoTitleSol(count), Th, metric);
+
+	count++;
+}
