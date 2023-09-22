@@ -1,5 +1,6 @@
 *.log
-*.geo
+convert.geo
+cad_500.geo
 circles
 mesh
 sol
