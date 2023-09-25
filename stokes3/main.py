@@ -284,6 +284,7 @@ if __name__ == '__main__':
     wdir = osp.join(os.getcwd(), os.pardir)
     dir = os.getcwd()
 
+    os.makedirs(osp.join(wdir, 'circles'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo_unrolled'), exist_ok=True)
     os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
