@@ -290,6 +290,7 @@ if __name__ == '__main__':
     os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo_unrolled'), exist_ok=True)
     os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'vtu'), exist_ok=True)
 
     with open("convert.geo", "w") as f:
         with alive_bar(total=args.n) as bar:
