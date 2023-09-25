@@ -159,7 +159,7 @@ def create_geo(
         geo.write('//+\nRectangle({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 0))
         geo.write(f'//+\nl = {mesh_line_size};\n')
         for i in range(4):
-            geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size[i]))
+            geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size))
 
         # Circles
         for j in range(len(R)):
@@ -278,6 +278,7 @@ if __name__ == '__main__':
     os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo_unrolled'), exist_ok=True)
     os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'vtu'), exist_ok=True)
 
     with open("convert.geo", "w") as f:
         with alive_bar(total=args.n) as bar:
