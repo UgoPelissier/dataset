@@ -154,15 +154,20 @@ def create_geo(
     with open(osp.join(os.getcwd(), 'geo', 'cad_{:03d}.geo'.format(index)), 'w') as geo:
         geo.write('//+\nMesh.MshFileVersion = 2.2;\n')
         geo.write('//+\nSetFactory("OpenCASCADE");\n')
+
+        # Rectangle domain
         geo.write('//+\nRectangle({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(1, x_start, -H+y_start, 0, L-x_start, 2*H, 0))
         geo.write(f'//+\nl = {mesh_line_size};\n')
         for i in range(4):
             geo.write('//+\nMeshSize {{{:d}}} = {:f};\n'.format(i+1, mesh_line_size[i]))
+
+        # Circles
         for j in range(len(R)):
             geo.write('//+\nDisk({:d}) = {{{:f}, {:f}, {:f}, {:f}, {:f}}};\n'.format(2+j, c[j][0], c[j][1], 0, R[j], R[j]))
             geo.write(f'//+\nc{j} = {mesh_circle_size*R[j]};\n')
             geo.write('//+\nMeshSize {{{:d}}} = c{:d};\n'.format(4+j+1, j))
 
+        # Boolean difference
         geo.write('//+\nBooleanDifference{ ')
         geo.write('Surface{{{:d}}}; Delete; '.format(1))
         geo.write('}{ ')
@@ -184,7 +189,9 @@ def create_geo(
 
         geo.write('//+\nPhysical Surface("{:s}", {:d}) = {{{:d}}};\n'.format('FLUID', 5, 1))
 
-        geo.write('//+\nMesh 2;\n')
+        geo.write('//+\nMesh 2;\n') # For vizualisation in GMSH only
+
+        geo.write('//+\nSave "../geo_unrolled/cad_{:03d}.geo_unrolled";\n'.format(index)) # Save the unrolled geometry
         
 def create_mesh(
     x_start: float,
@@ -197,8 +204,6 @@ def create_mesh(
     mesh_circle_size: float,
     index: int
 )->None:
-    mesh_line_size = mesh_size(L, H, [x_start, L, L, x_start], [-H+y_start, -H+y_start, H+y_start, H+y_start], c, R)
-
     create_geo(x_start, y_start, L, H, c, R, mesh_line_size, mesh_circle_size, index)
 
     # Initialize empty geometry using the build in kernel in GMSH
@@ -222,10 +227,10 @@ def create_mesh(
     model.synchronize()
 
     # Set mesh size for box points
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)]], mesh_line_size[0])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+1]], mesh_line_size[1])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+2]], mesh_line_size[3])
-    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+3]], mesh_line_size[2])
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+1]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+2]], mesh_line_size)
+    gmsh.model.mesh.setSize([gmsh.model.getEntities(0)[len(disks)+3]], mesh_line_size)
 
     # Set mesh size for cylinder points
     for j in range(len(disks)):
@@ -247,8 +252,7 @@ def create_mesh(
     geometry.generate_mesh(dim=2)
 
     gmsh.write(osp.join(os.getcwd(), 'mesh', 'cad_{:03d}.msh2'.format(index)))
-    gmsh.write(osp.join(os.getcwd(), 'vtk', 'cad_{:03d}.vtk'.format(index)))
-    
+
     gmsh.clear()
     geometry.__exit__()
 
@@ -272,12 +276,12 @@ if __name__ == '__main__':
 
     os.makedirs(osp.join(wdir, 'circles'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'geo_unrolled'), exist_ok=True)
     os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
-    os.makedirs(osp.join(dir, 'vtk'), exist_ok=True)
 
-    with alive_bar(total=args.p*args.n) as bar:
-        for i in range(args.p):
-            for j in range(args.n):
+    with open("convert.geo", "w") as f:
+        with alive_bar(total=args.n) as bar:
+            for i in range(args.n):
                 # Randomly generate the position of the channel
                 x_start = random.random()
                 y_start = random.random()
@@ -285,6 +289,11 @@ if __name__ == '__main__':
                 H = args.H_ref*(0.25*random.random()+0.75)
 
                 # Randomly generate the position of the circles
-                c, R = create_circles(wdir, (i+1), x_start, y_start, L, H, args.r[0], args.r[1], args.m, i*args.n+j)
-                create_mesh(x_start, y_start, L, H, c, R, args.l, args.c, i*args.n+j)    
+                c, R = create_circles(wdir, args.p, x_start, y_start, L, H, args.r[0], args.r[1], args.m, i)
+                create_mesh(x_start, y_start, L, H, c, R, args.l, args.c, i)    
                 bar()
+
+                # Write the convert.geo file
+                f.write('//+\nMerge "{:s}";\n'.format(osp.join(dir, 'geo', 'cad_{:03d}.geo'.format(i))))
+                f.write('//+\nDelete Model;\n')
+        f.write('//+\nExit;\n')
