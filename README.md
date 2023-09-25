@@ -9,7 +9,7 @@ The domain is a square with one or two circular holes. U-velocity is set to one 
 The `stokes2.sh` file contains the commands to generate the dataset. The `stokes2.sh` file can be run with the command:
 
 ```bash
-bash ./stokes2.sh -p 2 -n 250 -rmin 0.5 -rmax 1.5 -L_ref 40.0 -H_ref 5.0 -m 0.5 -l 1.0 -c 0.1
+bash ./stokes2.sh -p 2 -n 500 -l 1.0 -c 0.1
 ```
 
 To get help on the parameters, run:
@@ -40,7 +40,7 @@ The domain is a box with one or two circular cylinders. U-velocity is set to one
 The `stokes3.sh` file contains the commands to generate the dataset. The `stokes3.sh` file can be run with the command:
 
 ```bash
-bash ./stokes3.sh -p 2 -l 1.0 -c 0.1
+bash ./stokes3.sh -p 2 -n 500 -l 1.0 -c 0.1
 ```
 
 To get help on the parameters, run:
@@ -73,7 +73,7 @@ The domain is a box with one or two circular cylinders. U-velocity is set to one
 The `stokes3adapt.sh` file contains the commands to generate the dataset. The `stokes3adapt.sh` file can be run with the command:
 
 ```bash
-bash ./stokes3adapt.sh -p 2 -l 1.0 -c 0.1
+bash ./stokes3adapt.sh -p 2 -n 500 -l 1.0 -c 0.1
 ```
 
 To get help on the parameters, run:
