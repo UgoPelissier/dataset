@@ -63,8 +63,8 @@ gmsh convert.geo
 FreeFem++ stokes{2,3,3adapt}.edp
 ```
 
-- The python file generates the CAD files (```geo/cad_*.geo``` files), the mesh files (```mesh/cad_*.msh2``` files) and the script to convert them to more general CAD files (```convert.geo_unrolled``` file).
-- The ```convert.geo``` file is read by *GMSH* to generate ```geo/cad_*.geo_unrolled``` files
+- The python file generates the CAD files (```geo/cad_*.geo``` files), the mesh files (```msh/cad_*.msh``` and ```mesh/cad_*.mesh``` files) and the script to convert them to more general CAD files (```convert.geo_unrolled``` file).
+- The ```convert.geo``` file is read by *Gmsh* to generate ```geo/cad_*.geo_unrolled``` files
 - The *FreeFem++* file reads the mesh, solves the Stokes equation and saves the solution in a ```vtu```.
 
 The ```vtu``` file can be read by *Paraview* to visualize the solution.
