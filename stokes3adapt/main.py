@@ -199,9 +199,12 @@ def create_geo(
 
         geo.write('//+\nPhysical Volume("{:s}", {:d}) = {{{:d}}};\n'.format('FLUID', 5, 1))
 
-        geo.write('//+\nMesh 2;\n') # For vizualisation in GMSH only
-
         geo.write('//+\nSave "../geo_unrolled/cad_{:03d}.geo_unrolled";\n'.format(index)) # Save the unrolled geometry
+
+        geo.write('//+\nMesh 2;\n')
+        geo.write('//+\nMesh 3;\n')
+        geo.write('//+\nSave "../msh/cad_{:03d}.msh";\n'.format(index))
+        geo.write('//+\nSave "../mesh/cad_{:03d}.mesh";\n'.format(index))
         
 def create_mesh(
     x_start: float,
@@ -289,6 +292,7 @@ if __name__ == '__main__':
     os.makedirs(osp.join(wdir, 'circles'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo'), exist_ok=True)
     os.makedirs(osp.join(dir, 'geo_unrolled'), exist_ok=True)
+    os.makedirs(osp.join(dir, 'msh'), exist_ok=True)
     os.makedirs(osp.join(dir, 'mesh'), exist_ok=True)
     os.makedirs(osp.join(dir, 'vtu'), exist_ok=True)
 
